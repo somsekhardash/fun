@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Just Fun</title>
+	<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+	<style type="text/css">
+		.ui-dialog{
+			border: 1px solid black;
+		}
+		.description{display: none;}
+		.show{display: block;}
+	</style>
+</head>
+<body>
+
+<span>Enter The Word:</span> <input type="text" name="word" id="word">
+<span>Enter The Meaning:</span> <input type="text" name="meaning" id="meaning">
+<button onclick="save()">save</button>
+<button onclick="test()">test</button>
+
+<div id="dialog" title="Testing">
+  	<span class="name"></span>
+  	<button onclick="showResult()">meaning</button>
+  	<span class="description"></span>
+</div>
+
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script type="text/javascript">
+	function save(){
+		var obj = {},newObjArray="[]";
+		obj.word = document.getElementById("word").value,
+		obj.description = document.getElementById("meaning").value;
+		newObjArray = getData(newObjArray);
+		newObjArray.push(obj);
+		sendData(newObjArray);	
+		clearFields();			
+	}
+
+	function showResult(){
+		$(".description").toggleClass("show");
+	}
+
+	function getData(newObjArray){
+		if(!!window.localStorage.words)	
+			return JSON.parse(newObjArray);
+		else {
+			window.localStorage.words = "[]";
+			return JSON.parse(newObjArray);
+		}
+	}
+
+	function clearFields() {
+		document.getElementById("word").value = "";
+ 		document.getElementById("meaning").value = "";
+	}
+
+	function sendData(newObjArray) {
+		var x = JSON.parse(window.localStorage.words);
+		x.push(newObjArray[0]);
+		window.localStorage.words = JSON.stringify(x);
+	}
+
+	function test(){
+		var words = JSON.parse(window.localStorage.words),
+		item = words[Math.floor(Math.random()*words.length)];
+		$("#dialog").dialog("open");
+		$(".name").text(item.word);
+		$(".description").text(item.description);
+	}
+	
+	$(function(){
+		$("#dialog").dialog({
+		  autoOpen: false
+		});
+	});
+
+</script>
+
+</body>
+</html>
