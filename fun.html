@@ -1,80 +1,192 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="myApp">
 <head>
 	<title>Just Fun</title>
-	<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+	<link rel="stylesheet" type="text/css" href="http://semantic-ui.com/dist/semantic.min.css">
+
 	<style type="text/css">
-		.ui-dialog{
-			border: 1px solid black;
+		.margin-bottom-25 {
+			margin-bottom: 25px;
 		}
-		.description{display: none;}
-		.show{display: block;}
+		.padding-top-25 {
+			padding-top: 25px !important;
+		}
+		.no-visibility {
+			visibility: hidden;
+		}
+		.full-width {
+			width: 100% !important;
+		}
 	</style>
+
 </head>
-<body>
+<body ng-controller="dicController" ng-init="loader=1;testSelect=0;noAns=1">
 
-<span>Enter The Word:</span> <input type="text" name="word" id="word">
-<span>Enter The Meaning:</span> <input type="text" name="meaning" id="meaning">
-<button onclick="save()">save</button>
-<button onclick="test()">test</button>
+	<div class="ui two column doubling stackable grid container padding-top-25" ng-class="loader ? 'loader active' : ''">
+		<div class="column" ng-class="loader ? 'no-visibility' : ''">
+			<div class="ui icon input fluid margin-bottom-25">
+			  <input type="text" placeholder="Word" ng-model="word">
+			  <i class="icon"></i>
+			</div>
+			<div class="ui input fluid margin-bottom-25">
+			  <input type="text" placeholder="Meaning" ng-model="meaning">
+			</div>
+			<div class="ui input fluid margin-bottom-25">
+			  <input type="text" placeholder="Example" ng-model="example">
+			</div>
+			<button class="ui primary button" ng-click="saveWord()">Save</button>
+			
+			<button class="ui secondary button" ng-click="createTest()">Test</button>
+			<div class="ui toggle checkbox">
+			  <input type="checkbox" name="testSelect" ng-model="testSelect">
+			  <label>Test on meaning</label>
+			</div>
+		</div>
+		<div class="column">
+			<div ng-repeat="item in myData" class="subItems margin-bottom-25">
+				<div class="ui card full-width">
+				  	<div class="content">
+				    	<div class="header">{{item.word}}</div>
+				  	</div>
+					<div class="content">
+						<h4 class="ui sub header blue">{{item.meaning}}</h4>
+						<div class="ui small feed">
+						  <div class="event">
+						    <div class="content">
+						      <div class="summary">
+						         {{item.example}}
+						      </div>
+						    </div>
+						  </div>
+						</div>
+					</div>
+					<div class="extra content">
+						<button class="ui button orange" ng-click="deleteNode(item)">Delete</button>
+						<button class="ui button teal" ng-click="updateNode(item)">Update</button>
+					</div>
+				</div>
+			</div>			
+		</div>
+	</div>
 
-<div id="dialog" title="Testing">
-  	<span class="name"></span>
-  	<button onclick="showResult()">meaning</button>
-  	<span class="description"></span>
-</div>
+	<div class="ui basic modal dimmer">
+		<i class="close icon"></i>
+			<div class="header">
+				{{qus}}
+			</div>
+		<div class="content">
+			<div class="description" ng-class="noAns ? 'no-visibility' : ''">
+			  <p>{{ans}}</p>
+			</div>
+			<div class="two fluid ui inverted buttons padding-top-25">
+				<button class="ui labeled icon button" ng-click="showTest()">
+					<i class="pause icon"></i>Show
+				</button>
+				<button class="ui right labeled icon button" ng-click="nextTest()">
+					<i class="right arrow icon"></i>Next
+				</button>
+			</div>	
+		</div>
+	</div>
 
-<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.0/angular.min.js"></script>
+<script src="http://semantic-ui.com/javascript/library/jquery.min.js"></script>
+<script src="http://semantic-ui.com/dist/semantic.min.js"></script>
+<script src="http://underscorejs.org/underscore.js"></script>
+
 <script type="text/javascript">
-	function save(){
-		var obj = {},newObjArray="[]";
-		obj.word = document.getElementById("word").value,
-		obj.description = document.getElementById("meaning").value;
-		newObjArray = getData(newObjArray);
-		newObjArray.push(obj);
-		sendData(newObjArray);	
-		clearFields();			
-	}
-
-	function showResult(){
-		$(".description").toggleClass("show");
-	}
-
-	function getData(newObjArray){
-		if(!!window.localStorage.words)	
-			return JSON.parse(newObjArray);
-		else {
-			window.localStorage.words = "[]";
-			return JSON.parse(newObjArray);
-		}
-	}
-
-	function clearFields() {
-		document.getElementById("word").value = "";
- 		document.getElementById("meaning").value = "";
-	}
-
-	function sendData(newObjArray) {
-		var x = JSON.parse(window.localStorage.words);
-		x.push(newObjArray[0]);
-		window.localStorage.words = JSON.stringify(x);
-	}
-
-	function test(){
-		var words = JSON.parse(window.localStorage.words),
-		item = words[Math.floor(Math.random()*words.length)];
-		$("#dialog").dialog("open");
-		$(".name").text(item.word);
-		$(".description").text(item.description);
-	}
-	
-	$(function(){
-		$("#dialog").dialog({
-		  autoOpen: false
-		});
+(function() {
+	angular.module('myApp', []).factory('putJSON', function($http) {
+	   	return {
+	        getResult: function(data) {
+	            return $http.put('https://api.myjson.com/bins/z845t',data)
+                   	.then(function(result) {
+                        return result;
+                	}, function(result) {
+                    	return "false";
+                	});
+	        }
+	   	}
 	});
 
+	angular.module('myApp').factory('getJSON', function($http) {
+	   	return {
+	        getResult: function() {
+	        	return $http.get('https://api.myjson.com/bins/z845t')
+                   	.then(function(result) {
+                   		window.localStorage.getData = JSON.stringify(result);
+                   		return result;
+                	}, function(result) {
+                    	return JSON.parse(window.localStorage.getData);
+                	});
+	        }
+	   	}
+	});
+
+	angular.module('myApp').
+		controller('dicController', function($scope,putJSON,getJSON) {
+			angular.element(document).ready(function () {
+		        getJSON.getResult().then(function(result) {
+			        $scope.myData = result.data;
+			        $scope.loader = 0;
+			    },function(){
+			    	alert("danger");
+			    });
+		    });
+
+			$scope.saveWord = function() {
+				var data = {
+	        		"word": $scope.word,
+	        		"meaning": $scope.meaning,
+	        		"example": $scope.example
+	        	};
+	        	$scope.myData.push(data);
+				$scope.word = "";
+		        $scope.meaning = "";
+		        $scope.example = "";
+				putJSON.getResult($scope.myData).then(function(result) {
+					console.log(result);
+			    });
+			};
+
+			$scope.updateNode = function(data) {
+				$scope.word = data.word;
+		        $scope.meaning = data.meaning;
+		        $scope.example = data.example;
+		        $scope.deleteNode(data);
+			};
+
+			$scope.deleteNode = function(data) {
+				$scope.myData = _.without($scope.myData, _.findWhere($scope.myData, {
+				  word: data.word
+				}));
+				putJSON.getResult($scope.myData).then(function(result) {
+			        console.log(result);
+			    });
+			};
+
+			$scope.createTest = function(){
+				$('.ui.basic.modal').modal('show');
+				$scope.nextTest();
+			};
+
+			$scope.nextTest = function(){
+				var item = $scope.myData[Math.floor(Math.random()*$scope.myData.length)];
+				if(!$scope.testSelect){
+					$scope.qus = item.word;
+					$scope.ans = item.meaning;
+				}else{
+					$scope.qus = item.meaning;
+					$scope.ans = item.word;
+				} 
+				$scope.noAns = true;
+			};
+
+			$scope.showTest = function(){
+				$scope.noAns = false;
+			};
+	});
+})();
 </script>
 
 </body>
