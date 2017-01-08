@@ -17,6 +17,15 @@
 		.full-width {
 			width: 100% !important;
 		}
+		.no-padding {
+			padding: 0;
+		}
+		.margin-bottom-0 {
+			margin-bottom: 0;
+		}
+		.no-radious {
+			border-radius: 0!important;
+		}
 	</style>
 
 </head>
@@ -34,6 +43,25 @@
 			<div class="ui input fluid margin-bottom-25">
 			  <input type="text" placeholder="Example" ng-model="example">
 			</div>
+			<div class="ui input fluid margin-bottom-25">
+			  <input type="text" placeholder="Synonyms" ng-model="synonyms" my-enter="doSomething()">
+			</div>
+
+			<ul class="parent no-padding">
+				<li class="ui image label" ng-repeat="data in synonymsDatas">
+			      	{{data}}
+			    	<i class="delete icon" ng-click="deleteWord(data)"></i>	
+			    </li>
+			</ul>
+			<!-- 
+			<div class="ui search margin-bottom-25">
+				<div class="ui icon input">
+					<input class="prompt no-radious" type="text" placeholder="Search Words...">
+					<i class="search icon"></i>
+				</div>
+				<div class="results"></div>
+			</div>
+ -->
 			<button class="ui primary button" ng-click="saveWord()">Save</button>
 			
 			<button class="ui secondary button" ng-click="createTest()">Test</button>
@@ -59,6 +87,11 @@
 						    </div>
 						  </div>
 						</div>
+						<ul class="parent no-padding margin-bottom-0">
+							<li class="ui image label" ng-repeat="data in item.synonyms">
+						      	{{data}}	
+						    </li>
+						</ul>
 					</div>
 					<div class="extra content">
 						<button class="ui button orange" ng-click="deleteNode(item)">Delete</button>
@@ -96,10 +129,11 @@
 
 <script type="text/javascript">
 (function() {
+	
 	angular.module('myApp', []).factory('putJSON', function($http) {
 	   	return {
 	        getResult: function(data) {
-	            return $http.put('https://api.myjson.com/bins/z845t',data)
+	        	return $http.put('https://api.myjson.com/bins/z845t',data)
                    	.then(function(result) {
                         return result;
                 	}, function(result) {
@@ -123,36 +157,80 @@
 	   	}
 	});
 
+	angular.module('myApp').directive('myEnter', function () {
+		return function (scope, element, attrs) {
+		    element.bind("keydown keypress", function (event) {
+		        if(event.which === 13) {	
+		            scope.$apply(function (){
+		                scope.$eval(attrs.myEnter);
+		            });
+		            event.preventDefault();
+		        }
+		    });
+		};
+	});
+
+
 	angular.module('myApp').
 		controller('dicController', function($scope,putJSON,getJSON) {
 			angular.element(document).ready(function () {
 		        getJSON.getResult().then(function(result) {
 			        $scope.myData = result.data;
+			        /*var autoCompleteArray = [];
+			        _.each(result.data,function(item){
+			        	var temp = JSON.parse(JSON.stringify(item.synonyms));
+			        	temp.push(item.word);
+			        	autoCompleteArray.push(temp);
+			        	autoCompleteArray= _.uniq(_.flatten(autoCompleteArray));
+					});
+					
+					var autoCompleteArray =_.map(autoCompleteArray, function(key) {
+					    return { 'title': key}
+					});
+
+			        $('.ui.search').search({
+						source : autoCompleteArray,
+						onSelect: function(x){
+							debugger;
+						}
+					});*/
+				
 			        $scope.loader = 0;
 			    },function(){
 			    	alert("danger");
 			    });
 		    });
 
+			$scope.synonymsDatas= [];
+
 			$scope.saveWord = function() {
-				var data = {
-	        		"word": $scope.word,
-	        		"meaning": $scope.meaning,
-	        		"example": $scope.example
-	        	};
-	        	$scope.myData.push(data);
-				$scope.word = "";
-		        $scope.meaning = "";
-		        $scope.example = "";
-				putJSON.getResult($scope.myData).then(function(result) {
-					console.log(result);
-			    });
+				if(!!$scope.word && !!$scope.meaning) {
+					var data = {
+		        		"word": $scope.word,
+		        		"meaning": $scope.meaning,
+		        		"example": $scope.example,
+		        		"synonyms":$scope.synonymsDatas
+		        	};
+		        	$scope.myData.push(data);
+					$scope.word = "";
+			        $scope.meaning = "";
+			        $scope.example = "";
+					$scope.synonymsDatas = [];
+					putJSON.getResult($scope.myData).then(function(result) {
+						console.log(result);
+				    });
+			    }
+			};
+
+			$scope.deleteWord = function(data){
+				$scope.synonymsDatas = _.without($scope.synonymsDatas, data);
 			};
 
 			$scope.updateNode = function(data) {
 				$scope.word = data.word;
 		        $scope.meaning = data.meaning;
 		        $scope.example = data.example;
+		        $scope.synonymsDatas = data.synonyms;
 		        $scope.deleteNode(data);
 			};
 
@@ -181,6 +259,12 @@
 				} 
 				$scope.noAns = true;
 			};
+
+			$scope.doSomething = function(){
+				if(!!$scope.synonyms)
+					$scope.synonymsDatas.push($scope.synonyms); 
+				$scope.synonyms = "";
+			};	
 
 			$scope.showTest = function(){
 				$scope.noAns = false;
